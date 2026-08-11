@@ -3,6 +3,8 @@ on:
   push:
     branches:
     - master
+    paths-ignore:
+    - '.github/**'
   workflow_dispatch:
 
 concurrency:
@@ -80,6 +82,26 @@ jobs:
           path: out/desktop/*
           retention-days: 30
 
+      - name: Split ISO for GitHub Release (>2GB limit)
+        id: split
+        run: |
+          cd out/desktop
+          ls -lh
+          ISO=$(ls *.iso | head -1)
+          split -b 1900M -d -a 2 "$ISO" cachyos-iso.part
+          sha256sum cachyos-iso.part* > parts.sha256
+          cat > merge.sh <<'EOF'
+          #!/bin/bash
+          # 合并分卷还原 ISO
+          set -e
+          cd "$(dirname "$0")"
+          cat cachyos-iso.part* > cachyos.iso
+          sha256sum -c parts.sha256
+          echo "OK, merged: cachyos.iso"
+          EOF
+          chmod +x merge.sh
+          ls -lh
+
       - name: Publish Release
         id: release
         if: github.event_name != 'pull_request'
@@ -96,8 +118,16 @@ jobs:
             - **Hysteria2** 2.9.x (AUR hysteria-bin，含 systemd 服务)
             - **noto-fonts-cjk** 中文字体
 
+            ### 下载与合并
+            GitHub Release 单文件限制 2GB，ISO 已拆分为 `cachyos-iso.part00/01/...`：
+            ```bash
+            # 下载全部 part 文件 + merge.sh + parts.sha256 到同一目录
+            chmod +x merge.sh && ./merge.sh
+            # 得到 cachyos.iso，校验通过后即可写入 U 盘安装
+            ```
             其他文件（安装脚本/配置模板）见仓库根目录 `setup.sh`、`configs/`。
           files: |
-            out/desktop/*.iso
-            out/desktop/*.sha256
+            out/desktop/cachyos-iso.part*
+            out/desktop/parts.sha256
+            out/desktop/merge.sh
           fail_on_unmatched_files: true
