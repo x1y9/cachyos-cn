@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         id: dependencies
         run: |
-          sudo pacman -Syu --noconfirm archiso cachyos-keyring mkinitcpio-archiso squashfs-tools grub
+          sudo pacman -Syu --noconfirm archiso cachyos-keyring mkinitcpio-archiso squashfs-tools grub git
 
       - name: Create build user
         id: user-archiso
