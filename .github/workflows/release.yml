@@ -17,6 +17,7 @@ jobs:
           pattern: cachyos-desktop-linux-*
           path: iso
           merge-multiple: true
+          run-id: 31480294627
 
       - name: Split ISO (>2GB GitHub limit)
         id: split
