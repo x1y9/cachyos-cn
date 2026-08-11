@@ -1,0 +1,103 @@
+name: CachyOS Custom ISO
+on:
+  push:
+    branches:
+    - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+    name: Build
+    outputs:
+      builddate: ${{ steps.date.outputs.builddate }}
+    steps:
+      - name: Get build date
+        id: date
+        run: |
+          echo "builddate=$(date +'%y%m%d')" >> $GITHUB_OUTPUT
+
+      - name: Clone CachyOS-Live-ISO
+        id: clone
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check disk space
+        id: disk
+        run: |
+          df -h / | tail -1
+
+      - name: Add CachyOS keyring
+        id: keyring
+        run: |
+          pacman-key --init
+          pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+          pacman-key --lsign-key F3B607488DB35A47
+
+          sed -i '/^\[core\]$/i[cachyos]\nServer = https://mirror.cachyos.org/repo/$arch/$repo\n' /etc/pacman.conf
+
+      - name: Install dependencies
+        id: dependencies
+        run: |
+          sudo pacman -Syu --noconfirm archiso cachyos-keyring mkinitcpio-archiso squashfs-tools grub
+
+      - name: Create build user
+        id: user-archiso
+        run: |
+          useradd builder -m
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chmod -R a+rw .
+
+      - name: Build hysteria2 AUR package (hysteria-bin)
+        id: hysteria
+        run: |
+          sudo -H -E -u builder git clone --depth 1 https://aur.archlinux.org/hysteria-bin.git /tmp/hysteria-bin
+          sudo -H -E -u builder bash -c 'cd /tmp/hysteria-bin && makepkg -s --noconfirm'
+          cp /tmp/hysteria-bin/hysteria-*.pkg.tar.zst archiso/airootfs/root/
+          ls -lh archiso/airootfs/root/
+
+      - name: Build ISO (${{ steps.date.outputs.builddate }})
+        id: build
+        run: |
+          sudo -H -E -u builder ./buildiso.sh
+
+      - name: Upload ISO to artifacts
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: cachyos-desktop-linux-${{ steps.date.outputs.builddate }}
+          path: out/desktop/*
+          retention-days: 30
+
+      - name: Publish Release
+        id: release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: cachyos-custom-${{ steps.date.outputs.builddate }}
+          name: CachyOS 中文定制版 ${{ steps.date.outputs.builddate }}
+          body: |
+            ## CachyOS 中文定制版 ISO
+
+            基于官方 CachyOS-Live-ISO (KDE Plasma)，预装：
+            - **fcitx5 中文输入法** — 拼音默认启用 (Ctrl+Space 切换)，含 Rime
+            - **WPS Office** 国际版 11.1.0 (CachyOS 官方仓库)
+            - **Hysteria2** 2.9.x (AUR hysteria-bin，含 systemd 服务)
+            - **noto-fonts-cjk** 中文字体
+
+            其他文件（安装脚本/配置模板）见仓库根目录 `setup.sh`、`configs/`。
+          files: |
+            out/desktop/*.iso
+            out/desktop/*.sha256
+          fail_on_unmatched_files: true

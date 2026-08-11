@@ -1,0 +1,28 @@
+# ============================================================
+# Hysteria2 服务端配置模板 (hysteria 2.x)
+# 放到 /etc/hysteria/config.yaml 然后:
+#   sudo systemctl enable --now hysteria-server@config
+# 服务端默认监听 UDP 36712, 密码改成你自己的
+# ============================================================
+listen: :36712
+
+auth:
+  type: password
+  password: CHANGE_ME_STRONG_PASSWORD
+
+# 伪装 HTTP/3, 过墙更稳 (可选)
+# masquerade:
+#   type: proxy
+#   proxy:
+#     url: https://www.bing.com
+#     rewriteHost: true
+
+# TLS 证书 (自签或 ACME)
+tls:
+  cert: /etc/hysteria/server.crt
+  key: /etc/hysteria/server.key
+
+# 带宽上限 (可选)
+# bandwidth:
+#   up: 100 mbps
+#   down: 100 mbps
