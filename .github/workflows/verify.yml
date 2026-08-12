@@ -1,0 +1,43 @@
+name: Verify ISO
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    name: Merge & Verify
+    steps:
+      - name: Download parts & checksums
+        id: download
+        run: |
+          BASE="https://github.com/x1y9/cachyos-cn/releases/download/cachyos-custom-260811"
+          curl -4 -sL -o part00 "$BASE/cachyos-iso.part00"
+          curl -4 -sL -o part01 "$BASE/cachyos-iso.part01"
+          curl -4 -sL -o expected.sha256 "$BASE/cachyos-desktop-linux-260811.iso.sha256"
+          ls -lh
+
+      - name: Merge & compare hash
+        id: merge
+        run: |
+          cat part00 part01 > merged.iso
+          echo "merged size: $(stat -c%s merged.iso)"
+          ACTUAL=$(sha256sum merged.iso | awk '{print $1}')
+          EXPECTED=$(awk '{print $1}' expected.sha256)
+          echo "actual:   $ACTUAL"
+          echo "expected: $EXPECTED"
+          if [ "$ACTUAL" = "$EXPECTED" ]; then
+            echo "HASH: PASS"
+          else
+            echo "HASH: FAIL"
+            exit 1
+          fi
+
+      - name: Check ISO structure
+        id: structure
+        run: |
+          echo "--- isoinfo ---"
+          isoinfo -i merged.iso -d 2>&1 | head -12 || true
+          echo "--- 7z listing ---"
+          7z l merged.iso 2>&1 | head -15 || true
+          echo "--- iso9660 valid check ---"
+          isoinfo -i merged.iso -l 2>&1 | head -10 || true
