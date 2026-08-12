@@ -89,15 +89,25 @@ jobs:
           ls -lh
           ISO=$(ls *.iso | head -1)
           split -b 1900M -d -a 2 "$ISO" cachyos-iso.part
+          # 合并后 ISO 的预期哈希 (与分卷哈希区分开)
+          sha256sum "$ISO" > merged.sha256
           sha256sum cachyos-iso.part* > parts.sha256
-          cat > merge.sh <<'EOF'
+          cat > merge.sh <<EOF
           #!/bin/bash
-          # 合并分卷还原 ISO
+          # 合并分卷还原 ISO (校验合并结果)
           set -e
-          cd "$(dirname "$0")"
+          cd "\$(dirname "\$0")"
           cat cachyos-iso.part* > cachyos.iso
-          sha256sum -c parts.sha256
-          echo "OK, merged: cachyos.iso"
+          EXPECTED=\$(awk '{print \$1}' merged.sha256)
+          ACTUAL=\$(sha256sum cachyos.iso | awk '{print \$1}')
+          if [ "\$EXPECTED" = "\$ACTUAL" ]; then
+            echo "OK: cachyos.iso 校验通过 (\$ACTUAL)"
+          else
+            echo "FAIL: 校验不匹配! 请重新下载全部 part 文件"
+            echo "expected: \$EXPECTED"
+            echo "actual:   \$ACTUAL"
+            exit 1
+          fi
           EOF
           chmod +x merge.sh
           ls -lh
@@ -129,5 +139,6 @@ jobs:
           files: |
             out/desktop/cachyos-iso.part*
             out/desktop/parts.sha256
+            out/desktop/merged.sha256
             out/desktop/merge.sh
           fail_on_unmatched_files: true
