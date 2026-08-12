@@ -1,7 +1,7 @@
 # ============================================================
 # Hysteria2 客户端配置模板 (hysteria 2.x)
 # 放到 /etc/hysteria/client.yaml 然后:
-#   sudo systemctl enable --now hysteria-client@client
+#   sudo systemctl enable --now hysteria@client
 # ============================================================
 server: YOUR_SERVER_IP:36712
 

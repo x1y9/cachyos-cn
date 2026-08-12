@@ -26,10 +26,15 @@ X-GNOME-Autostart-Phase=Applications
 Terminal=false
 EOF
 
-# ---- 2.5 默认启用拼音输入法 (新用户继承 /etc/skel) ----
+# ---- 2.5 默认启用拼音输入法 ----
 # fcitx5-chinese-addons 提供 pinyin 引擎; 首次登录 Ctrl+Space 直接打拼音
-mkdir -p /etc/skel/.config/fcitx5
-cat > /etc/skel/.config/fcitx5/profile <<'EOF'
+# 注意: mkarchiso 在运行本脚本之前就会把 /etc/skel 复制到 liveuser 家目录
+# (archiso/mkarchiso 的 _make_customize_airootfs), 所以光写 /etc/skel 只对安装后
+# 的新用户生效, live 会话必须同时直接写 /home/liveuser
+write_fcitx_profile() {
+    local dir="$1"
+    mkdir -p "$dir/.config/fcitx5"
+    cat > "$dir/.config/fcitx5/profile" <<'EOF'
 [Groups/0]
 Name=Default
 Default Layout=us
@@ -46,6 +51,13 @@ Layout=
 [GroupOrder]
 0=Default
 EOF
+}
+
+write_fcitx_profile /etc/skel
+if [ -d /home/liveuser ]; then
+    write_fcitx_profile /home/liveuser
+    chown -R liveuser:liveuser /home/liveuser/.config
+fi
 
 # ---- 3. 安装 hysteria2 (本地构建的 pkg, 见 build.sh 中 hysteria 构建步骤) ----
 if ls /root/hysteria-*.pkg.tar.zst >/dev/null 2>&1; then
