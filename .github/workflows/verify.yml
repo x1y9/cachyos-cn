@@ -34,9 +34,9 @@ jobs:
       - name: Check ISO structure
         id: structure
         run: |
-          echo "--- isoinfo ---"
-          isoinfo -i merged.iso -d 2>&1 | head -12 || true
-          echo "--- 7z listing ---"
-          7z l merged.iso 2>&1 | head -15 || true
-          echo "--- iso9660 valid check ---"
-          isoinfo -i merged.iso -l 2>&1 | head -10 || true
+          echo "--- file type ---"
+          file merged.iso || true
+          echo "--- ISO9660 / isohybrid / El Torito check ---"
+          python3 scripts/verify_iso.py merged.iso || true
+          echo "--- try 7z (if available) ---"
+          (7z l merged.iso 2>&1 | head -12 || true)
