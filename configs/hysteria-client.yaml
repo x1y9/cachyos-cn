@@ -1,17 +1,8 @@
-# ============================================================
-# Hysteria2 客户端配置模板 (hysteria 2.x)
-# 放到 /etc/hysteria/client.yaml 然后:
-#   sudo systemctl enable --now hysteria@client
-# ============================================================
-server: YOUR_SERVER_IP:36712
-
-auth: CHANGE_ME_STRONG_PASSWORD
-
-# 自签证书跳过校验
-insecure: true
-
-# 本地 SOCKS5 代理端口 (常用 1080)
+server: YOURSERVER:443 
+auth: YOURPASS
+tls:
+  insecure: true
 socks5:
-  listen: 127.0.0.1:1080
-
-# 透明代理/TUN 模式需要额外配置, 见官方文档
+  listen: 127.0.0.1:8888 
+http:
+  listen: 127.0.0.1:8889
