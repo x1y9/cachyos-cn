@@ -1,8 +1,14 @@
-server: YOURSERVER:443 
+# ============================================================
+# Hysteria2 客户端配置模板 (hysteria 2.x)
+# ISO 已预置到 /etc/hysteria/config.yaml (hysteria 默认配置路径)
+# 仓库备份, 供手动安装参考:
+#   sudo systemctl enable --now hysteria@config
+# ============================================================
+server: YOURSERVER:443
 auth: YOURPASS
 tls:
   insecure: true
 socks5:
-  listen: 127.0.0.1:8888 
+  listen: 127.0.0.1:8888
 http:
   listen: 127.0.0.1:8889

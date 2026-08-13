@@ -1,0 +1,15 @@
+# ============================================================
+# Hysteria2 客户端配置 (hysteria 2.x)
+# 预置于 /etc/hysteria/config.yaml (hysteria 默认配置路径)
+# 启动: sudo systemctl enable --now hysteria@config
+# 命令行: hysteria client  (无需 -c 参数)
+# 只需改 server(服务器IP:端口) 和 auth(密码) 两行
+# ============================================================
+server: YOURSERVER:443
+auth: YOURPASS
+tls:
+  insecure: true
+socks5:
+  listen: 127.0.0.1:8888
+http:
+  listen: 127.0.0.1:8889
