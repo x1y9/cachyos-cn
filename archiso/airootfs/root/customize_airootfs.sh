@@ -5,6 +5,11 @@
 # ============================================================
 set -e
 
+# 构建标记: 验证 customize 是否真的执行 (grep 构建日志 CACHYOS_CN_CUSTOMIZE)
+echo "=== CACHYOS_CN_CUSTOMIZE_RUNNING ==="
+whoami
+ls -la /root/ | head
+
 # ---- 1. 输入法环境变量 (追加到 /etc/environment, 保留原有 ZPOOL_VDEV_NAME_PATH) ----
 cat >> /etc/environment <<'EOF'
 GTK_IM_MODULE=fcitx
