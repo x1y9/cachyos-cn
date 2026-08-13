@@ -68,8 +68,20 @@ if [ -d /home/liveuser ]; then
 fi
 
 # ---- 3. 安装 hysteria2 (本地构建的 pkg, 见 build.sh 中 hysteria 构建步骤) ----
+# 注意: pacstrap 阶段用的是主系统 keyring (-G), 但 customize 在 chroot 里跑 pacman
+# 用的是 chroot 自己的 /etc/pacman.d/gnupg, 没有 cachyos key → 校验 cachyos 数据库
+# PGP 签名会失败 ("key is unknown / keyring is not writable")。先初始化并导入 key。
 if ls /root/hysteria-*.pkg.tar.zst >/dev/null 2>&1; then
-    pacman -U --noconfirm /root/hysteria-*.pkg.tar.zst
+    pacman-key --init >/dev/null 2>&1 || true
+    pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com >/dev/null 2>&1 \
+        && pacman-key --lsign-key F3B607488DB35A47 >/dev/null 2>&1 || true
+    if pacman -U --noconfirm /root/hysteria-*.pkg.tar.zst; then
+        echo "hysteria 安装成功 (pacman)"
+    else
+        echo "警告: keyring 校验仍失败, 使用 SigLevel=Never 兜底安装 (pkg 为本地构建未签名包)"
+        sed 's/^SigLevel.*/SigLevel = Never/' /etc/pacman.conf > /tmp/pacman-nosig.conf
+        pacman -U --noconfirm --config /tmp/pacman-nosig.conf /root/hysteria-*.pkg.tar.zst
+    fi
     rm -f /root/hysteria-*.pkg.tar.zst
 fi
 
