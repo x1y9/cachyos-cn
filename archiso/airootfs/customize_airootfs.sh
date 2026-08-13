@@ -54,9 +54,12 @@ EOF
 }
 
 write_fcitx_profile /etc/skel
+# 防御两种执行顺序: 若 archiso 已先创建 liveuser 并拷贝 skel 则补写 liveuser;
+# 若尚未创建 (customize 先跑), 则只写 skel, 由 mkarchiso 后续拷贝到 liveuser。
+# 注意: 不要主动 mkdir /home/liveuser, 否则 useradd -m 会跳过 skel 拷贝。
 if [ -d /home/liveuser ]; then
     write_fcitx_profile /home/liveuser
-    chown -R liveuser:liveuser /home/liveuser/.config
+    chown -R liveuser:liveuser /home/liveuser/.config 2>/dev/null || true
 fi
 
 # ---- 3. 安装 hysteria2 (本地构建的 pkg, 见 build.sh 中 hysteria 构建步骤) ----
